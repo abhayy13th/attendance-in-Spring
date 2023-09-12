@@ -8,6 +8,7 @@ import java.sql.Time;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +42,14 @@ public class AttendanceService {
         return attendanceRepository.save(attendance);
     }
 
+    public void deleteAttendance(int id) {
+        boolean exists = attendanceRepository.existsById(id);
+        if (!exists) {
+            throw new IllegalStateException("Attendance with id " + id + " does not exists");
+        }
+        attendanceRepository.deleteById(id);
+    }
+
     public String punchIn() {
         LocalDate currentDate = LocalDate.now();
         LocalTime currentTime = LocalTime.now();
@@ -52,8 +61,9 @@ public class AttendanceService {
             return "It's a weekend. No attendance required.";
         }
 
-        if (attendanceRepository.findAttendanceByAttendance_date(currentDate).isPresent()) {
-            return ("Attendance for today already done at " + attendance.getPunchin() + ".");
+        if (attendanceRepository.findAttendanceByAttendance_date(currentDate).isPresent() && lastAttendance.getPunchin() != null) {
+            // Punch in already done
+            return ("Punch for today already done at " + attendanceRepository.findAttendanceByAttendance_date(currentDate).get().getPunchin() + ".");
         } else {
             if (lastAttendance.getPunchout() == null && lastAttendance.getAttendance_date().getDayOfWeek() != DayOfWeek.SATURDAY && lastAttendance.getAttendance_date().getDayOfWeek() != DayOfWeek.SUNDAY) {
                 // Punch out not done, cannot punch in
@@ -62,22 +72,74 @@ public class AttendanceService {
 
             if (currentTime.isBefore(bufferEndTime.toLocalTime())) {
                 // Within buffer time, insert the record
-                attendance.setPunchin(Time.valueOf(currentTime));
+                attendance.setPunchin(Time.valueOf(currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
                 attendance.setAttendance_date((currentDate));
                 attendanceRepository.save(attendance);
-                return punchInMessage + "Attendance recorded successfully";
-            } else if (currentTime.isAfter(officeStartTime.toLocalTime()) && currentTime.isBefore(officeEndTime.toLocalTime())) {
+                return punchInMessage + "Attendance recorded successfully.Punched In at " + currentTime + ".";
+            } else if (currentTime.isAfter(officeStartTime.toLocalTime())){
+//                    && currentTime.isBefore(officeEndTime.toLocalTime())) {
                 // Late, insert the record but display a message
-                attendance.setPunchin(Time.valueOf(currentTime));
+                attendance.setPunchin(Time.valueOf(currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
                 attendance.setAttendance_date(currentDate);
                 attendanceRepository.save(attendance);
-                return punchInMessage + "You are late. Attendance recorded.";
-            } else {
-                // Beyond office start time, cannot punch in
-                return punchInMessage + "You are too late to punch in.";
+                return punchInMessage + "You are late. Attendance recorded.Punched In at " + currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")) + ".";
             }
+//            else {
+//                // Beyond office start time, cannot punch in
+//                return punchInMessage + "You are too late to punch in.";
+//            }
+            return punchInMessage + "You are too late to punch in.";
         }
     }
+
+
+    public String punchOut() {
+
+        LocalDate currentDate = LocalDate.now();
+        LocalTime currentTime = LocalTime.now();
+        Attendance attendance ;
+
+
+        DayOfWeek dayOfWeek = currentDate.getDayOfWeek();
+        String punchOutMessage = "";
+
+        if (attendanceRepository.findAttendanceByAttendance_date(currentDate).isPresent()) {
+            attendance = attendanceRepository.findAttendanceByAttendance_date(currentDate).get();
+        } else {
+            attendance = new Attendance();
+            punchOutMessage = "You have not punched in today.";
+        }
+
+
+        if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
+            return "It's a weekend. No attendance required.";
+        }
+
+        if (attendance.getPunchout() != null) {
+            // Punch out already done
+            return ("Punch for today already done at " + attendance.getPunchout() + ".");
+        } else {
+            if (attendance.getPunchin() == null) {
+                // Punch in not done, cannot punch out
+                punchOutMessage = "You have not punched in today.";
+            }
+            if (currentTime.isBefore(officeStartTime.toLocalTime())) {
+                // Before office start time, do not allow punch out
+
+                return punchOutMessage + "You are too early to punch out.";
+            } else {
+                // Punch out
+                attendance.setPunchout(Time.valueOf(currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
+                attendance.setAttendance_date(currentDate);
+                attendanceRepository.save(attendance);
+                return punchOutMessage + "Attendance recorded successfully.Punched Out at " + currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")) + ".";
+            }
+
+
+        }
+    }
+
+
 }
 
 

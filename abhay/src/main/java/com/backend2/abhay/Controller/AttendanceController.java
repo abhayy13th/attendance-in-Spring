@@ -32,5 +32,14 @@ public class AttendanceController {
     public String punchIn() {
         return attendanceService.punchIn();
     }
+    @PostMapping(path = "/punchout")
+    public String punchOut() {
+        return attendanceService.punchOut();
+    }
+
+    @DeleteMapping(path = "/delete/{id}")
+    public void deleteAttendance(@PathVariable("id") int id) {
+        attendanceService.deleteAttendance(id);
+    }
 
 }

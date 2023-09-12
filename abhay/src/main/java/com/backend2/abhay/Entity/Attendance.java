@@ -21,7 +21,9 @@ public class Attendance {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+    @DateTimeFormat (pattern = "HH:mm:ss")
     private Time punchin;
+    @DateTimeFormat (pattern = "HH:mm:ss")
     private Time punchout;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate attendance_date;
