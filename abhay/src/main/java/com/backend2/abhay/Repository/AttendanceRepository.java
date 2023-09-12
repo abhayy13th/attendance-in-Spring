@@ -17,4 +17,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Integer>
 
     @Query(value = "SELECT * FROM attendance ORDER BY id DESC LIMIT 1", nativeQuery = true)
     Attendance findLastAttendance();
+
+    @Query("SELECT (SUM(FUNCTION('TIME_TO_SEC', a.punchin) - FUNCTION('TIME_TO_SEC', a.punchout)) / 3600) FROM Attendance a WHERE a.attendance_date BETWEEN ?1 AND ?2")
+
+    Integer totalHoursWorked(LocalDate startDate, LocalDate endDate);
 }

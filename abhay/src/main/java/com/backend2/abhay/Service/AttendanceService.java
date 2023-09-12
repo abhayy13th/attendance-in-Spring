@@ -106,12 +106,14 @@ public class AttendanceService {
         if (attendanceRepository.findAttendanceByAttendance_date(currentDate).isPresent()) {
             attendance = attendanceRepository.findAttendanceByAttendance_date(currentDate).get();
         } else {
+            //No punch in case
             attendance = new Attendance();
             punchOutMessage = "You have not punched in today.";
         }
 
 
         if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
+            //Weekend no attendance required
             return "It's a weekend. No attendance required.";
         }
 
@@ -121,13 +123,21 @@ public class AttendanceService {
         } else {
             if (attendance.getPunchin() == null) {
                 // Punch in not done, cannot punch out
-                punchOutMessage = "You have not punched in today.";
+                punchOutMessage = "You have not punched in today. ";
             }
             if (currentTime.isBefore(officeStartTime.toLocalTime())) {
                 // Before office start time, do not allow punch out
 
                 return punchOutMessage + "You are too early to punch out.";
-            } else {
+            } else if (currentTime.isAfter(officeStartTime.toLocalTime()) && currentTime.isBefore(officeEndTime.toLocalTime())) {
+                // Within office hours, punch out
+                Time remainingTime = Time.valueOf(LocalTime.of(18, 0).minusHours(currentTime.getHour()).minusMinutes(currentTime.getMinute()).minusSeconds(currentTime.getSecond()));
+                attendance.setPunchout(Time.valueOf(currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
+                attendance.setAttendance_date(currentDate);
+                attendanceRepository.save(attendance);
+                return punchOutMessage + "Attendance recorded successfully.Punched Out at " + currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")) + ".\n"+"You have worked for "+ remainingTime +" hours today.";
+
+            } else  {
                 // Punch out
                 attendance.setPunchout(Time.valueOf(currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"))));
                 attendance.setAttendance_date(currentDate);
@@ -136,10 +146,28 @@ public class AttendanceService {
             }
 
 
+
         }
     }
 
 
+    public Integer totalHoursWorked(LocalDate startDate, LocalDate endDate) {
+        try{
+            if (startDate.isAfter(endDate)) {
+                throw new IllegalStateException("Start date cannot be after end date");
+            }
+            Integer workHours = attendanceRepository.totalHoursWorked(startDate, endDate);
+            if (workHours == null) {
+                return 0;
+            }
+            return workHours;
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            return -1;
+        }
+
+
+    }
 }
 
 
