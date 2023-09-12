@@ -5,8 +5,8 @@ import com.backend2.abhay.Repository.AttendanceRepository;
 import org.springframework.stereotype.Service;
 
 import java.sql.Time;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -16,9 +16,19 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
 
+    String punchInMessage = "";
+
+
+    // Define office start time and buffer time and office end time
+    private final Time officeStartTime = Time.valueOf(LocalTime.of(9, 0));
+    private final Time bufferEndTime = Time.valueOf(LocalTime.of(9, 15));
+
+    private final Time officeEndTime = Time.valueOf(LocalTime.of(18, 0));
+
     public AttendanceService(AttendanceRepository attendanceRepository) {
         this.attendanceRepository = attendanceRepository;
     }
+
     public List<Attendance> getAttendance() {
         return attendanceRepository.findAll();
     }
@@ -34,28 +44,40 @@ public class AttendanceService {
     public String punchIn() {
         LocalDate currentDate = LocalDate.now();
         LocalTime currentTime = LocalTime.now();
+        Attendance attendance = new Attendance();
+        Attendance lastAttendance = attendanceRepository.findLastAttendance();
+        DayOfWeek dayOfWeek = currentDate.getDayOfWeek();
 
-        // Define office start time and buffer time as Time
-        Time officeStartTime = Time.valueOf(LocalTime.of(9, 0));
-        Time bufferEndTime = Time.valueOf(LocalTime.of(9, 15));
+        if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
+            return "It's a weekend. No attendance required.";
+        }
 
-        if (currentTime.isBefore(bufferEndTime.toLocalTime())) {
-            // Within buffer time, insert the record
-            Attendance attendance = new Attendance();
-            attendance.setPunchin(Time.valueOf(currentTime));
-            attendance.setAttendance_date((currentDate));
-            attendanceRepository.save(attendance);
-            return "Attendance recorded successfully";
-        } else if (currentTime.isBefore(officeStartTime.toLocalTime())) {
-            // Late, insert the record but display a message
-            Attendance attendance = new Attendance();
-            attendance.setPunchin(Time.valueOf(currentTime));
-            attendance.setAttendance_date(currentDate);
-            attendanceRepository.save(attendance);
-            return "You are late. Attendance recorded.";
+        if (attendanceRepository.findAttendanceByAttendance_date(currentDate).isPresent()) {
+            return ("Attendance for today already done at " + attendance.getPunchin() + ".");
         } else {
-            // Beyond office start time, cannot punch in
-            return "You are too late to punch in.";
+            if (lastAttendance.getPunchout() == null && lastAttendance.getAttendance_date().getDayOfWeek() != DayOfWeek.SATURDAY && lastAttendance.getAttendance_date().getDayOfWeek() != DayOfWeek.SUNDAY) {
+                // Punch out not done, cannot punch in
+                punchInMessage = "You have missed punched out on " + lastAttendance.getAttendance_date() + ".";
+            }
+
+            if (currentTime.isBefore(bufferEndTime.toLocalTime())) {
+                // Within buffer time, insert the record
+                attendance.setPunchin(Time.valueOf(currentTime));
+                attendance.setAttendance_date((currentDate));
+                attendanceRepository.save(attendance);
+                return punchInMessage + "Attendance recorded successfully";
+            } else if (currentTime.isAfter(officeStartTime.toLocalTime()) && currentTime.isBefore(officeEndTime.toLocalTime())) {
+                // Late, insert the record but display a message
+                attendance.setPunchin(Time.valueOf(currentTime));
+                attendance.setAttendance_date(currentDate);
+                attendanceRepository.save(attendance);
+                return punchInMessage + "You are late. Attendance recorded.";
+            } else {
+                // Beyond office start time, cannot punch in
+                return punchInMessage + "You are too late to punch in.";
+            }
         }
     }
 }
+
+
