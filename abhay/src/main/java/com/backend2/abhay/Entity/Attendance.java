@@ -1,23 +1,21 @@
 package com.backend2.abhay.Entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.sql.Time;
 import java.time.LocalDate;
 import java.util.Date;
 
+@Builder
 @Getter
 @Setter
 @Entity
 @Table
 @AllArgsConstructor
 @NoArgsConstructor
-public class Attendance {
+public class Attendance{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;

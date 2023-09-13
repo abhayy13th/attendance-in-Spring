@@ -84,11 +84,11 @@ public class AttendanceService {
                 attendanceRepository.save(attendance);
                 return punchInMessage + "You are late. Attendance recorded.Punched In at " + currentTime.format(DateTimeFormatter.ofPattern("HH:mm:ss")) + ".";
             }
-//            else {
-//                // Beyond office start time, cannot punch in
-//                return punchInMessage + "You are too late to punch in.";
-//            }
-            return punchInMessage + "You are too late to punch in.";
+            else {
+                // Beyond office start time, cannot punch in
+                return punchInMessage + "You are too late to punch in.";
+            }
+
         }
     }
 
@@ -166,6 +166,13 @@ public class AttendanceService {
             return -1;
         }
 
+
+    }
+
+    public Attendance getAttendanceById(int id) {
+        Attendance attendance = attendanceRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Attendance with id " + id + " does not exists"));
+        return attendance;
 
     }
 }

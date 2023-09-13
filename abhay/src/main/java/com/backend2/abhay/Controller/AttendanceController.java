@@ -16,6 +16,7 @@ public class AttendanceController {
 
     @Autowired
     public AttendanceController(AttendanceService attendanceService) {
+
         this.attendanceService = attendanceService;
     }
 
@@ -23,6 +24,11 @@ public class AttendanceController {
     public List<Attendance> getAttendance() {
         return attendanceService.getAttendance();
 
+    }
+
+    @GetMapping(path = "/{id}")
+    public Attendance getAttendanceById(@PathVariable("id") int id) {
+        return attendanceService.getAttendanceById(id);
     }
 
     @PostMapping(path = "/add")
@@ -34,6 +40,7 @@ public class AttendanceController {
     public String punchIn() {
         return attendanceService.punchIn();
     }
+
     @PostMapping(path = "/punchout")
     public String punchOut() {
         return attendanceService.punchOut();
@@ -46,7 +53,7 @@ public class AttendanceController {
 
     @PostMapping(path = "/totalHoursWorked")
     public Integer totalHoursWorked(@RequestBody TotalWorkHoursDTO totalWorkHoursDTO) {
-        return attendanceService.totalHoursWorked(totalWorkHoursDTO.getStartDate(),totalWorkHoursDTO.getEndDate());
+        return attendanceService.totalHoursWorked(totalWorkHoursDTO.getStartDate(), totalWorkHoursDTO.getEndDate());
     }
 
 }
