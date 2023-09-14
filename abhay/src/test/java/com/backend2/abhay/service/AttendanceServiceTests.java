@@ -59,6 +59,33 @@ public class AttendanceServiceTests {
     }
 
     @Test
+    public void attendanceService_getAllAttendance(){
+        //Arrange
+        Attendance attendance1 = Attendance.builder()
+                .punchin(Time.valueOf("09:30:00"))
+                .punchout(Time.valueOf("17:00:00"))
+                .attendance_date(LocalDate.now())
+                .build();
+
+        Attendance attendance2 = Attendance.builder()
+                .punchin(Time.valueOf("09:30:00"))
+                .punchout(Time.valueOf("17:00:00"))
+                .attendance_date(LocalDate.of(2021, 8, 10))
+                .build();
+
+        Mockito.when(attendanceRepository.findAll()).thenReturn(java.util.List.of(attendance1,attendance2));
+
+        //Act
+        attendanceService.addAttendance(attendance1);
+        attendanceService.addAttendance(attendance2);
+
+        //Assert
+        Assertions.assertThat(attendanceService.getAttendance()).isNotNull();
+        Assertions.assertThat(attendanceService.getAttendance().size()).isEqualTo(2);
+
+    }
+
+    @Test
     public void attendanceService_getAttendanceById(){
 //Arrange
         Attendance attendance1 = Attendance.builder()
@@ -144,7 +171,7 @@ public class AttendanceServiceTests {
 
         //Assert
 
-        Assertions.assertThat(punchIn).isEqualTo("Punch for today already done at "+ attendance1.getPunchin()+".");
+        Assertions.assertThat(punchIn).isEqualTo("Punch in for today already done at "+ attendance1.getPunchin()+".");
 
 
     }
@@ -190,7 +217,7 @@ public class AttendanceServiceTests {
 
         //Assert
         if(attendance1.getPunchout() != null)
-            Assertions.assertThat(punchOut).isEqualTo("Punch for today already done at "+ attendance1.getPunchout()+".");
+            Assertions.assertThat(punchOut).isEqualTo("Punch out for today already done at "+ attendance1.getPunchout()+".");
         else if (LocalTime.now().isBefore(LocalTime.of(18,00))&& LocalTime.now().isAfter(LocalTime.of(9,15)))
             Assertions.assertThat(punchOut).isEqualTo("Attendance recorded.Punched Out at "+ LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))+".");
         else if (LocalTime.now().isBefore(LocalTime.of(9,15)))

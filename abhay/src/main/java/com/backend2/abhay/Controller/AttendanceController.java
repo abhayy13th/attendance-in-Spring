@@ -12,7 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/api/attendance")
 public class AttendanceController {
-    private final AttendanceService attendanceService;
+    private AttendanceService attendanceService;
 
     @Autowired
     public AttendanceController(AttendanceService attendanceService) {
@@ -22,38 +22,40 @@ public class AttendanceController {
 
     @GetMapping(path = "/")
     public List<Attendance> getAttendance() {
-        return attendanceService.getAttendance();
+        return this.attendanceService.getAttendance();
 
     }
 
     @GetMapping(path = "/{id}")
     public Attendance getAttendanceById(@PathVariable("id") int id) {
-        return attendanceService.getAttendanceById(id);
+        return this.attendanceService.getAttendanceById(id);
     }
 
     @PostMapping(path = "/add")
     public Attendance addAttendance(@RequestBody Attendance attendance) {
-        return attendanceService.addAttendance(attendance);
+        return this.attendanceService.addAttendance(attendance);
     }
 
     @PostMapping(path = "/punchin")
     public String punchIn() {
-        return attendanceService.punchIn();
+        return this.attendanceService.punchIn();
     }
 
     @PostMapping(path = "/punchout")
     public String punchOut() {
-        return attendanceService.punchOut();
+        return this.attendanceService.punchOut();
     }
 
     @DeleteMapping(path = "/delete/{id}")
-    public void deleteAttendance(@PathVariable("id") int id) {
-        attendanceService.deleteAttendance(id);
+    public String deleteAttendance(@PathVariable("id") int id) {
+        return this.attendanceService.deleteAttendance(id);
     }
 
-    @PostMapping(path = "/totalHoursWorked")
-    public Integer totalHoursWorked(@RequestBody TotalWorkHoursDTO totalWorkHoursDTO) {
-        return attendanceService.totalHoursWorked(totalWorkHoursDTO.getStartDate(), totalWorkHoursDTO.getEndDate());
+    @GetMapping(path = "/totalHoursWorked")
+    public String totalHoursWorked(@RequestBody TotalWorkHoursDTO totalWorkHoursDTO) {
+        Integer workHours = this.attendanceService.totalHoursWorked(totalWorkHoursDTO.getStartDate(), totalWorkHoursDTO.getEndDate());
+        if (workHours == -1)
+            return "Error: Start Date Cannot be greater than End Date";
+        return "Total Hours Worked: " + workHours;
     }
-
 }
